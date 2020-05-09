@@ -45,10 +45,10 @@ static int lept_parse_null(lept_context* c, lept_value* v) {
 static int lept_parse_number(lept_context* c, lept_value* v) {
     char* end;
     /* \TODO validate number */
-    v->n = strtod(c->json, &end);
-    if (c->json == end)
-        return LEPT_PARSE_INVALID_VALUE;
-    c->json = end;
+    v->n = strtod(c->json, &end);            //double strtod（const char *start,char **end），返回带符号的strat
+    if (c->json == end)                      //所表示的浮点型数，end指向浮点数之后的部分，如果溢出，返回HUGE_VAL
+        return LEPT_PARSE_INVALID_VALUE;     
+    c->json = end;                           //指向浮点数字符串后的位置，用于继续检测NOT_STNGULAR的错误   
     v->type = LEPT_NUMBER;
     return LEPT_PARSE_OK;
 }
