@@ -12,12 +12,12 @@
 #define EXPECT(c, ch)       do { assert(*c->json == (ch)); c->json++; } while(0)
 #define ISDIGIT(ch)         ((ch) >= '0' && (ch) <= '9')
 #define ISDIGIT1TO9(ch)     ((ch) >= '1' && (ch) <= '9')
-#define PUTC(c, ch)         do { *(char*)lept_context_push(c, sizeof(char)) = (ch); } while(0)
+#define PUTC(c, ch)         do { *(char*)lept_context_push(c, sizeof(char)) = (ch); } while(0)  //将字符压入栈中
 
 typedef struct {
     const char* json;
-    char* stack;
-    size_t size, top;
+    char* stack;                 //一个共享栈
+    size_t size, top;             
 }lept_context;
 
 static void* lept_context_push(lept_context* c, size_t size) {
@@ -25,19 +25,19 @@ static void* lept_context_push(lept_context* c, size_t size) {
     assert(size > 0);
     if (c->top + size >= c->size) {
         if (c->size == 0)
-            c->size = LEPT_PARSE_STACK_INIT_SIZE;
-        while (c->top + size >= c->size)
+            c->size = LEPT_PARSE_STACK_INIT_SIZE;                //初始化栈的大小
+        while (c->top + size >= c->size)                         //栈的扩容
             c->size += c->size >> 1;  /* c->size * 1.5 */
         c->stack = (char*)realloc(c->stack, c->size);
     }
-    ret = c->stack + c->top;
-    c->top += size;
+    ret = c->stack + c->top;      //ret指向当前字符的初始位置                  
+    c->top += size;               //top指向栈顶，即字符的结束位置
     return ret;
 }
 
 static void* lept_context_pop(lept_context* c, size_t size) {
     assert(c->top >= size);
-    return c->stack + (c->top -= size);
+    return c->stack + (c->top -= size);          //返回这个字符串的起始位置
 }
 
 static void lept_parse_whitespace(lept_context* c) {
@@ -89,19 +89,19 @@ static int lept_parse_number(lept_context* c, lept_value* v) {
 static int lept_parse_string(lept_context* c, lept_value* v) {
     size_t head = c->top, len;
     const char* p;
-    EXPECT(c, '\"');
-    p = c->json;
+    EXPECT(c, '\"');             //读入第一个" 并将其跳过
+    p = c->json;                 //p指向字符串的第一个字符
     for (;;) {
-        char ch = *p++;
+        char ch = *p++;          //每次循环读入一个字符到ch中
         switch (ch) {
-            case '\"':
-                len = c->top - head;
-                lept_set_string(v, (const char*)lept_context_pop(c, len), len);
+            case '\"':           //遇到另一个" 表示字符串结束
+                len = c->top - head; 
+                lept_set_string(v, (const char*)lept_context_pop(c, len), len);   //将字符串从栈中读入value
                 c->json = p;
                 return LEPT_PARSE_OK;
             case '\0':
                 c->top = head;
-                return LEPT_PARSE_MISS_QUOTATION_MARK;
+                return LEPT_PARSE_MISS_QUOTATION_MARK;    //缺失另一个"
             default:
                 PUTC(c, ch);
         }
