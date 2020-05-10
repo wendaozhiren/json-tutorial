@@ -41,7 +41,7 @@ static void* lept_context_push(lept_context* c, size_t size) {
 
 static void* lept_context_pop(lept_context* c, size_t size) {
     assert(c->top >= size);
-    return c->stack + (c->top -= size);
+    return c->stack + (c->top -= size);      //一次性弹栈，返回要返回的字符串的首地址，并把top指回原来的位置
 }
 
 static void lept_parse_whitespace(lept_context* c) {
@@ -100,8 +100,8 @@ static int lept_parse_string(lept_context* c, lept_value* v) {
         switch (ch) {
             case '\"':
                 len = c->top - head;
-                lept_set_string(v, (const char*)lept_context_pop(c, len), len);
-                c->json = p;
+                lept_set_string(v, (const char*)lept_context_pop(c, len), len);   //把字符串输入value中
+                c->json = p;                                                      //c的json指向 " 的下一个字符，以便之后解析
                 return LEPT_PARSE_OK;
             case '\\':
                 switch (*p++) {
